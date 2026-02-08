@@ -15,21 +15,26 @@ import type { Account, Budget, Financing, FinancialData } from '@/types/finances
 import { formatCurrency } from '@/utils/helpers';
 import {
   loadFinancialData,
+  saveFinancialData,
   addAccount,
   updateAccount,
   deleteAccount,
   addBudget,
   updateBudget,
   deleteBudget,
+  addFinancing,
+  updateFinancing,
+  deleteFinancing,
 } from '@/utils/financialStorage';
 import { useToast } from '@/components/ui/use-toast';
+import { initialFinancing, initialAccounts, initialBudgets, initialIncome } from '@/data/initialFinances';
 
 export default function FinancesPage() {
   const [financialData, setFinancialData] = useState<FinancialData>({
     accounts: [],
     financing: [],
     budgets: [],
-    monthlyIncome: 0,
+    income: { monthly: 0, sources: [] },
   });
 
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -46,7 +51,20 @@ export default function FinancesPage() {
 
   useEffect(() => {
     const data = loadFinancialData();
-    setFinancialData(data);
+    
+    // Auto-initialisierung mit initialen Daten, wenn leer
+    if (data.accounts.length === 0 && data.financing.length === 0 && data.budgets.length === 0) {
+      const defaultData = {
+        accounts: initialAccounts,
+        financing: initialFinancing,
+        budgets: initialBudgets,
+        income: initialIncome
+      };
+      saveFinancialData(defaultData);
+      setFinancialData(defaultData);
+    } else {
+      setFinancialData(data);
+    }
   }, []);
 
   // Account Handlers
@@ -62,20 +80,20 @@ export default function FinancesPage() {
 
   const handleSubmitAccount = (accountData: Omit<Account, 'id'>) => {
     if (editingAccount) {
-      const updated = updateAccount(editingAccount.id, accountData);
-      setFinancialData(updated);
+      updateAccount(editingAccount.id, accountData);
       toast({
         title: 'Konto aktualisiert',
         description: `${accountData.name} wurde erfolgreich aktualisiert`,
       });
     } else {
-      const updated = addAccount(accountData);
-      setFinancialData(updated);
+      addAccount(accountData);
       toast({
         title: 'Konto hinzugefügt',
         description: `${accountData.name} wurde erfolgreich angelegt`,
       });
     }
+    const data = loadFinancialData();
+    setFinancialData(data);
     setAccountDialogOpen(false);
     setEditingAccount(null);
   };
@@ -98,20 +116,20 @@ export default function FinancesPage() {
 
   const handleSubmitBudget = (budgetData: Omit<Budget, 'id'>) => {
     if (editingBudget) {
-      const updated = updateBudget(editingBudget.id, budgetData);
-      setFinancialData(updated);
+      updateBudget(editingBudget.id, budgetData);
       toast({
         title: 'Budget aktualisiert',
         description: `${budgetData.category} wurde erfolgreich aktualisiert`,
       });
     } else {
-      const updated = addBudget(budgetData);
-      setFinancialData(updated);
+      addBudget(budgetData);
       toast({
         title: 'Budget hinzugefügt',
         description: `${budgetData.category} wurde erfolgreich angelegt`,
       });
     }
+    const data = loadFinancialData();
+    setFinancialData(data);
     setBudgetDialogOpen(false);
     setEditingBudget(null);
   };
@@ -121,21 +139,40 @@ export default function FinancesPage() {
     setDeleteDialogOpen(true);
   };
 
-  // Financing Handlers (vorerst nur Platzhalter, da keine add/update/delete Funktionen in financialStorage)
+  // Financing Handlers
   const handleAddFinancing = () => {
     setEditingFinancing(null);
     setFinancingDialogOpen(true);
   };
 
+  const handleEditFinancing = (financing: Financing) => {
+    setEditingFinancing(financing);
+    setFinancingDialogOpen(true);
+  };
+
   const handleSubmitFinancing = (financingData: Omit<Financing, 'id'>) => {
-    // TODO: Implementiere addFinancing/updateFinancing in financialStorage
-    toast({
-      variant: 'warning',
-      title: 'Funktion in Entwicklung',
-      description: 'Finanzierungen hinzufügen/bearbeiten wird bald verfügbar sein',
-    });
+    if (editingFinancing) {
+      updateFinancing(editingFinancing.id, financingData);
+      toast({
+        title: 'Finanzierung aktualisiert',
+        description: `${financingData.name} wurde erfolgreich aktualisiert`,
+      });
+    } else {
+      addFinancing(financingData);
+      toast({
+        title: 'Finanzierung hinzugefügt',
+        description: `${financingData.name} wurde erfolgreich angelegt`,
+      });
+    }
+    const data = loadFinancialData();
+    setFinancialData(data);
     setFinancingDialogOpen(false);
     setEditingFinancing(null);
+  };
+
+  const handleDeleteFinancingClick = (financing: Financing) => {
+    setDeleteTarget({ type: 'financing', id: financing.id });
+    setDeleteDialogOpen(true);
   };
 
   const handleIncomeUpdate = () => {
@@ -147,23 +184,29 @@ export default function FinancesPage() {
     if (!deleteTarget) return;
 
     if (deleteTarget.type === 'account') {
-      const updated = deleteAccount(deleteTarget.id);
-      setFinancialData(updated);
+      deleteAccount(deleteTarget.id);
       toast({
         title: 'Konto gelöscht',
         description: 'Das Konto wurde erfolgreich entfernt',
         variant: 'destructive',
       });
     } else if (deleteTarget.type === 'budget') {
-      const updated = deleteBudget(deleteTarget.id);
-      setFinancialData(updated);
+      deleteBudget(deleteTarget.id);
       toast({
         title: 'Budget gelöscht',
         description: 'Das Budget wurde erfolgreich entfernt',
         variant: 'destructive',
       });
+    } else if (deleteTarget.type === 'financing') {
+      deleteFinancing(deleteTarget.id);
+      toast({
+        title: 'Finanzierung gelöscht',
+        description: 'Die Finanzierung wurde erfolgreich entfernt',
+        variant: 'destructive',
+      });
     }
-    // TODO: Add financing delete when implemented
+    const data = loadFinancialData();
+    setFinancialData(data);
 
     setDeleteDialogOpen(false);
     setDeleteTarget(null);
@@ -192,7 +235,7 @@ export default function FinancesPage() {
     <div className="space-y-6 pb-20">
       {/* Income Manager */}
       <IncomeManager 
-        monthlyIncome={financialData.monthlyIncome} 
+        monthlyIncome={financialData.income.monthly} 
         onUpdate={handleIncomeUpdate}
       />
 
@@ -321,8 +364,51 @@ export default function FinancesPage() {
       )}
 
       {/* Financing Section */}
+      <FinancingOverview 
+        financings={financialData.financing}
+        onAddFinancing={handleAddFinancing}
+      />
+
+      {/* Financing Management Table */}
       {financialData.financing.length > 0 && (
-        <FinancingOverview financings={financialData.financing} />
+        <Card className="bg-zinc-900 border-2 border-zinc-800 p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Finanzierungen verwalten</h3>
+          <div className="space-y-2">
+            {financialData.financing.map((financing) => (
+              <div
+                key={financing.id}
+                className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg hover:bg-zinc-750 transition-colors"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-white">{financing.name}</p>
+                  <p className="text-sm text-zinc-400">{financing.description}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right mr-4">
+                    <p className="text-lg font-bold text-white">{formatCurrency(financing.remainingAmount)}</p>
+                    <p className="text-xs text-zinc-400">noch offen</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditFinancing(financing)}
+                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteFinancingClick(financing)}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {/* Budget Section */}

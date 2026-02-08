@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Finanzdaten hinzufügen</title>
+</head>
+<body>
+    <h1>Test Finanzdaten hinzufügen</h1>
+    <button onclick="addTestData()">Test-Daten hinzufügen</button>
+    <button onclick="clearData()">Alle Daten löschen</button>
+    <pre id="output"></pre>
+
+    <script>
+        function addTestData() {
+            // Test-Konto
+            const accounts = [{
+                id: crypto.randomUUID(),
+                name: "Girokonto",
+                type: "checking",
+                balance: 5000,
+                currency: "EUR",
+                lastUpdated: new Date().toISOString()
+            }];
+
+            // Test-Budget
+            const budgets = [{
+                id: crypto.randomUUID(),
+                category: "Lebensmittel",
+                limit: 500,
+                spent: 300,
+                period: "monthly",
+                subcategories: []
+            }];
+
+            // Test-Finanzierung
+            const financing = [{
+                id: crypto.randomUUID(),
+                name: "Auto-Finanzierung",
+                description: "VW Golf 2024",
+                initialAmount: 20000,
+                remainingAmount: 15000,
+                monthlyPayment: 350,
+                startDate: "2024-01-01",
+                endDate: "2027-12-31"
+            }];
+
+            // Test-Einkommen
+            const income = {
+                monthly: 3500,
+                sources: [
+                    { name: "Gehalt", amount: 3500 }
+                ]
+            };
+
+            localStorage.setItem('cashflow-accounts', JSON.stringify(accounts));
+            localStorage.setItem('cashflow-budgets', JSON.stringify(budgets));
+            localStorage.setItem('cashflow-financing', JSON.stringify(financing));
+            localStorage.setItem('cashflow-income', JSON.stringify(income));
+
+            document.getElementById('output').textContent = 
+                'Test-Daten hinzugefügt!\n\n' +
+                'Accounts: ' + JSON.stringify(accounts, null, 2) + '\n\n' +
+                'Budgets: ' + JSON.stringify(budgets, null, 2) + '\n\n' +
+                'Financing: ' + JSON.stringify(financing, null, 2) + '\n\n' +
+                'Income: ' + JSON.stringify(income, null, 2);
+            
+            alert('Test-Daten wurden hinzugefügt! Laden Sie die Finanzen-Seite neu.');
+        }
+
+        function clearData() {
+            localStorage.removeItem('cashflow-accounts');
+            localStorage.removeItem('cashflow-budgets');
+            localStorage.removeItem('cashflow-financing');
+            localStorage.removeItem('cashflow-income');
+            document.getElementById('output').textContent = 'Alle Daten gelöscht!';
+            alert('Alle Finanzdaten wurden gelöscht!');
+        }
+
+        // Zeige aktuelle Daten
+        window.onload = function() {
+            const current = {
+                accounts: localStorage.getItem('cashflow-accounts'),
+                budgets: localStorage.getItem('cashflow-budgets'),
+                financing: localStorage.getItem('cashflow-financing'),
+                income: localStorage.getItem('cashflow-income')
+            };
+            document.getElementById('output').textContent = 
+                'Aktuelle Daten:\n\n' + JSON.stringify(current, null, 2);
+        };
+    </script>
+</body>
+</html>

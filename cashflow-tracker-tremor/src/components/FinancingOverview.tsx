@@ -1,13 +1,15 @@
 import { Card } from '@tremor/react';
-import { TrendingUp, Calendar, AlertCircle } from 'lucide-react';
+import { TrendingUp, Calendar, AlertCircle, Plus, CreditCard } from 'lucide-react';
+import { Button } from './ui/button';
 import type { Financing } from '@/types/finances';
 import { formatCurrency } from '@/utils/helpers';
 
 interface FinancingOverviewProps {
   financings: Financing[];
+  onAddFinancing?: () => void;
 }
 
-export default function FinancingOverview({ financings }: FinancingOverviewProps) {
+export default function FinancingOverview({ financings, onAddFinancing }: FinancingOverviewProps) {
   const totalDebt = financings.reduce((sum, f) => sum + f.remainingAmount, 0);
   const totalInitial = financings.reduce((sum, f) => sum + f.initialAmount, 0);
   const totalPaid = totalInitial - totalDebt;
@@ -39,18 +41,41 @@ export default function FinancingOverview({ financings }: FinancingOverviewProps
 
   return (
     <div className="space-y-4">
-      <div>
-        <h3 className="text-lg font-semibold text-white">Finanzierungen</h3>
-        <p className="text-sm text-zinc-400">
-          Gesamt verbleibend: <span className="font-bold text-white">{formatCurrency(totalDebt)}</span>
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Finanzierungen</h3>
+          <p className="text-sm text-zinc-400">
+            Gesamt verbleibend: <span className="font-bold text-white">{formatCurrency(totalDebt)}</span>
+          </p>
+        </div>
+        {onAddFinancing && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onAddFinancing}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Finanzierung hinzufügen
+          </Button>
+        )}
       </div>
 
       {financings.length === 0 ? (
         <Card className="bg-zinc-900 border-2 border-zinc-800 p-6">
           <div className="text-center py-8">
-            <TrendingUp className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
-            <p className="text-zinc-400">Keine aktiven Finanzierungen</p>
+            <CreditCard className="h-12 w-12 text-zinc-600 mx-auto mb-4" />
+            <p className="text-zinc-400 mb-4">Noch keine Finanzierungen angelegt</p>
+            {onAddFinancing && (
+              <Button
+                variant="outline"
+                onClick={onAddFinancing}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Erste Finanzierung anlegen
+              </Button>
+            )}
           </div>
         </Card>
       ) : (
