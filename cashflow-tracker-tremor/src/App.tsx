@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
-import Navigation from './components/Navigation';
+import Sidebar from './components/Sidebar';
+import AuthProvider from './components/AuthProvider';
 import Dashboard from './pages/Dashboard';
 import ExpensesPage from './pages/ExpensesPage';
 import FinancesPage from './pages/FinancesPage';
@@ -131,20 +132,27 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        <Header onImport={handleImport} onExport={handleExport} />
-        <Navigation />
-        
-        <main className="pb-20 lg:pb-6">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/expenses" element={<ExpensesPage />} />
-            <Route path="/finances" element={<FinancesPage />} />
-          </Routes>
-        </main>
-        
-        <Toaster />
-      </div>
+      <AuthProvider>
+        <div className="min-h-screen bg-zinc-950 text-zinc-100 flex">
+          {/* Sidebar */}
+          <Sidebar />
+          
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+            <Header onImport={handleImport} onExport={handleExport} />
+            
+            <main className="flex-1 pb-20 lg:pb-6">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/finances" element={<FinancesPage />} />
+              </Routes>
+            </main>
+          </div>
+          
+          <Toaster />
+        </div>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
